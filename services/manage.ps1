@@ -47,15 +47,15 @@ function run {
 }
 
 function build {
-  & docker build -t "$IMAGE" -f $(SERVICE)/Dockerfile .
+  & docker build -t "$IMAGE" -f $SERVICE/Dockerfile .
 }
 
-function clean {
+function cleanup {
   & docker rmi $IMAGE
 }
 
 function clean-build {
-  clean
+  cleanup
   build
 }
 
@@ -71,6 +71,7 @@ function load-env {
     Get-Content $env_path | foreach {
       $name, $value = $_.split("=")
       if (-not([string]::IsNullOrWhiteSpace($name) -or $name.Contains("#"))) {
+        Write-Output "load-env for: $name"
         Set-Content env:\$name $value
       }
     }
@@ -79,14 +80,26 @@ function load-env {
 
 function dev {
   load-env
-  & docker run --rm -u ayonuser -ti `
-    -v "$($script_dir):/service" `
-  	--hostname kitsu-dev-worker `
-  	--env AYON_API_KEY=$env:AYON_API_KEY `
-  	--env AYON_SERVER_URL=$env:AYON_SERVER_URL `
-  	--env AYON_ADDON_NAME=$AYON_ADDON_NAME `
-  	--env AYON_ADDON_VERSION=$AYON_ADDON_VERSION `
-  	"$IMAGE" python -m $SERVICE
+  if ([string]::IsNullOrEmpty($env:AYON_NETWORK)) {
+    docker run --rm -u ayonuser -ti `
+      -v "$($script_dir):/service" `
+      --hostname kitsu-dev-worker `
+      --env AYON_API_KEY=$env:AYON_API_KEY `
+      --env AYON_SERVER_URL=$env:AYON_SERVER_URL `
+      --env AYON_ADDON_NAME=$AYON_ADDON_NAME `
+      --env AYON_ADDON_VERSION=$AYON_ADDON_VERSION `
+      "$IMAGE" python -m processor.processor
+  } else {
+    docker run --rm -u ayonuser -ti `
+      -v "$($script_dir):/service" `
+      --hostname kitsu-dev-worker `
+      --network=$env:AYON_NETWORK `
+      --env AYON_API_KEY=$env:AYON_API_KEY `
+      --env AYON_SERVER_URL=$env:AYON_SERVER_URL `
+      --env AYON_ADDON_NAME=$AYON_ADDON_NAME `
+      --env AYON_ADDON_VERSION=$AYON_ADDON_VERSION `
+      "$IMAGE" python -m processor.processor
+  }
 }
 
 function bash {
@@ -99,7 +112,7 @@ function main {
   } elseif ($FunctionName -eq "build") {
     build
   } elseif ($FunctionName -eq "clean") {
-    clean
+    cleanup
   } elseif ($FunctionName -eq "clean-build") {
     clean-build
   } elseif ($FunctionName -eq "run") {
@@ -110,7 +123,7 @@ function main {
     dist
   } elseif ($FunctionName -eq "bash") {
     bash
-  } elseif ($FunctionName -eq $null) {
+  } elseif ($null -eq $FunctionName) {
     defaultfunc
   } else {
     Write-Host "Unknown function ""$FunctionName"""

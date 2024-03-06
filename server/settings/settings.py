@@ -163,27 +163,43 @@ class SyncSettings(BaseSettingsModel):
 
 
 class KitsuSettings(BaseSettingsModel):
+    """Settings to connect Ayon to Kitsu in order to sync projects."""
+
     #
     ## Root fields
     #
     server: str = Field(
         "",
         title="Kitsu Server",
-        description="The URL of your Kitsu host. This can be the DNS name or ip address. Examples: https://kitsu.mystudio.com, http://198.1.50.50",
-        examples=["https://kitsu.mystudio.com", "http://198.1.50.50"],
+        description="The URL of your Kitsu host. This can be the DNS name or ip address.",
+        examples=["https://kitsu.mystudio.com", "http://198.1.55.55:99"],
         scope=["studio"],
     )
+    login_token: str | None = Field(
+        "kitsu_api_token",
+        enum_resolver=secrets_enum,
+        title="Kitsu bot API token",
+        description="""An API token for a Kitsu Bot is preferred to email/password. 
+        Supported since Kitsu v0.19.2 - [Kitsu docs - Create a bot](https://kitsu.cg-wire.com/discord/#create-a-bot-account)
+        """,
+        examples=["aabbccddeeffgghhiijjzzyyxx112233"],
+        scope=["studio"],
+    )
+
     login_email: str = Field(
         "kitsu_email",
         enum_resolver=secrets_enum,
         title="Kitsu user email",
-        description="A user with permissions to access all projects to be synced and add Kitsu listeners. A user with Studio Manager role.",
+        description="""A user with permissions to access all projects to be synced and add Kitsu listeners. 
+        A user with Studio Manager role.""",
+        examples=["user@studio.com"],
         scope=["studio"],
     )
     login_password: str | None = Field(
         "kitsu_password",
         enum_resolver=secrets_enum,
         title="Kitsu user password",
+        description="""Password for the Kitsu user email.""",
         scope=["studio"],
     )
 

@@ -3,7 +3,8 @@ import time
 from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import httpx
-from nxtools import logging
+from nxtools import logging, log_traceback
+
 
 from ayon_server.auth.session import Session
 from ayon_server.entities import (
@@ -334,7 +335,7 @@ async def sync_task(
                 # The new task type haven't bin implemented in Ayon yet
                 logging.warning(
                     f"The type '{entity_dict['name']}' isn't implemented yet."
-                    f"Currently they aren't supported"
+                    f" Currently they aren't supported"
                 )
                 return
 
@@ -431,7 +432,10 @@ async def push_entities(
                     entity_dict,
                 )
         except Exception as e:
-            logging.error(f"Sync failed for entity {entity_dict} with exception: {e}")
+            logging.error(
+                f"Sync failed for entity {entity_dict} with exception: {e} {traceback.format_exc()}"
+            )
+            log_traceback()
 
     logging.info(
         f"Synced {len(payload.entities)} entities in {time.time() - start_time}s"
@@ -511,6 +515,7 @@ async def remove_entities(
 
         except Exception as e:
             logging.error(f"Remove failed for entity {entity_dict} with exception: {e}")
+            log_traceback()
 
     logging.info(
         f"Deleted {len(payload.entities)} entities in {time.time() - start_time}s"

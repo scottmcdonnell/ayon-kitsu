@@ -6,7 +6,7 @@ authors = ["Martin Wacker <martin@ynput.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-gazu = "^0.9.9"
+gazu = "^0.10.1"
 nxtools = "^1.6"
 ayon-python-api = "1.0.0rc3"
 

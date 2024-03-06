@@ -10,11 +10,13 @@ class KitsuLoginException(Exception):
 class Kitsu:
     LoginException = KitsuLoginException
 
-    def __init__(self, server: str, email: str, password: str):
+    def __init__(
+        self, server: str, token: str | None, email: str | None, password: str | None
+    ):
         self.email = email
         self.password = password
         self.base_url = server
-        self.token = None
+        self.token = token
 
     async def login(self):
         try:
