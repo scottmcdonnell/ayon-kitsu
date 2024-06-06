@@ -32,28 +32,25 @@ def test_update_project(api, kitsu_url, ensure_kitsu_server_setting):
     Same for statuses and folderTypes. We start with just status: Todo and then add more.
     """
 
-    api.delete("/projects/test_project")
-    assert not api.get_project("test_project")
+    entity = mock_data.projects[0]
+    project_name = entity["name"]
 
-    entity = {
-        "name": "test_project",
-        "code": "TP",
-        "id": "test-project-id",
-        "type": "Project",
-    }
+    api.delete(f"/projects/{project_name}")
+    assert not api.get_project(project_name)
 
     project_meta = {
-        "code": "TEST_P",
+        "code": "TP1",
         "folderTypes": [{"name": "Folder"}],
         "taskTypes": [{"name": "Animation"}],
         "statuses": [{"name": "Todo"}],
-        "data": {"kitsuProjectId": "kitsu-project-id-1"},
+        "data": {"kitsuProjectId": entity["id"]},  # linked to kitsu entity
     }
 
     # create the test project
-    res = api.put("/projects/test_project", **project_meta)
+    res = api.put(f"/projects/{project_name}", **project_meta)
 
-    project = api.get_project("test_project")
+    project = api.get_project(project_name)
+    print(project)
     assert project["folderTypes"] == [{"name": "Folder"}]
     assert project["taskTypes"] == [{"name": "Animation"}]
     assert project["statuses"] == [{"name": "Todo"}]
@@ -66,7 +63,7 @@ def test_update_project(api, kitsu_url, ensure_kitsu_server_setting):
     )
     print(res.data)
     assert res.status_code == 200
-    project = api.get_project("test_project")
+    project = api.get_project(project_name)
 
     assert project["folderTypes"] == [
         {"icon": "folder", "name": "Folder", "shortName": ""},
@@ -98,7 +95,7 @@ def test_update_project(api, kitsu_url, ensure_kitsu_server_setting):
         {"icon": "layers", "name": "Compositing", "shortName": "comp"},
         {"icon": "task_alt", "name": "Grading", "shortName": "Grad"},
     ]
-    api.delete("/projects/test_project")
+    api.delete(f"/projects/{project_name}")
 
 
 def test_push_unsynced_project(api, kitsu_url):

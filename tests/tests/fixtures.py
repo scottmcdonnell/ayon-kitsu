@@ -152,6 +152,7 @@ def ensure_kitsu_server_setting(api, kitsu_url):
         res = api.post(f"{kitsu_url}/settings", **settings)
 
 
+@pytest.fixture()
 def delete_projects_enabled(api, kitsu_url):
     """update kitsu addon settings.sync_settings.delete_projects"""
     # lets get the settings for the addon
