@@ -1,14 +1,16 @@
 import unicodedata
 from typing import Any
 
-from nxtools import slugify
+from nxtools import slugify, logging
 
 from ayon_server.entities import (
+    ProjectEntity,
     FolderEntity,
     TaskEntity,
     UserEntity,
 )
 from ayon_server.events import dispatch_event
+from ayon_server.exceptions import ForbiddenException
 from ayon_server.lib.postgres import Postgres
 
 
@@ -65,6 +67,20 @@ def create_name_and_label(kitsu_name: str) -> dict[str, str]:
     """From a name coming from kitsu, create a name and label"""
     name_slug = slugify(kitsu_name, separator="_")
     return {"name": name_slug, "label": kitsu_name}
+
+
+async def get_project_by_kitsu_id(
+    kitsu_id: str,
+) -> ProjectEntity | None:
+    """Get an Ayon ProjectEntity by its Kitsu ID"""
+
+    res = await Postgres.fetch(
+        "SELECT name FROM projects WHERE data->>'kitsuProjectId' = $1",
+        kitsu_id,
+    )
+    if not res:
+        return None
+    return await ProjectEntity.load(res[0]["name"])
 
 
 async def get_user_by_kitsu_id(
@@ -291,3 +307,35 @@ async def delete_task(
         "project": project_name,
     }
     await dispatch_event(**event)
+
+
+async def update_project(
+    name: str,
+    **kwargs,
+):
+    logging.info(f"update_project: {name}: {kwargs}")
+    project = await ProjectEntity.load(name)
+    changed = False
+
+    for key, value in kwargs.items():
+        if key == "attrib":
+            for k, v in value.items():
+                if getattr(project.attrib, k) != v:
+                    setattr(project.attrib, k, v)
+                    if k not in project.own_attrib:
+                        project.own_attrib.append(k)
+                    changed = True
+
+        elif getattr(project, key) != value:
+            setattr(project, key, value)
+            changed = True
+
+    if changed:
+        await project.save()
+        event = {
+            "topic": "entity.project.updated",
+            "description": f"Project {project.name} updated",
+            "summary": {"ProjectName": project.name},
+        }
+        await dispatch_event(**event)
+    return changed
