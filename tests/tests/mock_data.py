@@ -1,4 +1,4 @@
-""" mock kitsu api data for patching gazu """
+"""mock kitsu api data for patching gazu"""
 
 projects = [
     {"name": "Test Project 1", "code": "TP1", "id": "project-id-1"},
